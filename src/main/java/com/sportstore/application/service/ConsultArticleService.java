@@ -1,6 +1,6 @@
 package com.sportstore.application.service;
 
-import com.sportstore.application.port.in.DeleteArticleUseCase;
+import com.sportstore.application.port.in.ConsultArticleUseCase;
 import com.sportstore.application.port.out.ArticleRepository;
 import com.sportstore.application.port.out.StockRepository;
 import com.sportstore.domain.exception.ArticleNotFoundException;
@@ -13,26 +13,31 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
-public class DeleteArticleService implements DeleteArticleUseCase {
+public class ConsultArticleService implements ConsultArticleUseCase {
 
-    private static final Logger log = LoggerFactory.getLogger(DeleteArticleService.class);
+    private static final Logger log = LoggerFactory.getLogger(ConsultArticleService.class);
 
     private final ArticleRepository articleRepository;
     private final StockRepository stockRepository;
 
-    public DeleteArticleService(ArticleRepository articleRepository, StockRepository stockRepository) {
+    public ConsultArticleService(ArticleRepository articleRepository, StockRepository stockRepository) {
         this.articleRepository = articleRepository;
         this.stockRepository = stockRepository;
     }
 
     @Override
-    public void deleteByName(ArticleName name) {
+    public Article consultByName(ArticleName name) {
         Article article = articleRepository.findByName(name)
                 .orElseThrow(() -> new ArticleNotFoundException(name));
 
-        articleRepository.delete(article);
-        stockRepository.delete(article.id());
+        var stock = stockRepository.findByArticleId(article.id())
+                .orElseThrow(() -> new IllegalStateException("Stock introuvable pour l'article: " + name.value()));
 
-        log.info("Article supprime : {} (id={})", article.name(), article.id());
+        var updatedStock = stock.decrementIfAvailable();
+        stockRepository.save(updatedStock);
+
+        log.debug("Consultation de l'article {} - stock décrémenté à {}", article.name(), updatedStock.quantity().value());
+
+        return article;
     }
 }

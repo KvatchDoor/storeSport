@@ -1,5 +1,6 @@
 package com.sportstore.infrastructure.adapter.in.rest;
 
+import com.sportstore.application.model.StockWithArticleName;
 import com.sportstore.application.port.in.UpsertArticleCommand;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleId;
@@ -7,6 +8,7 @@ import com.sportstore.domain.model.ArticleName;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
 import com.sportstore.infrastructure.adapter.in.rest.dto.ArticleResponse;
+import com.sportstore.infrastructure.adapter.in.rest.dto.StockResponse;
 import com.sportstore.infrastructure.adapter.in.rest.dto.UpsertArticleRequest;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
@@ -51,5 +53,13 @@ public interface ArticleWebMapper {
 
     default BigDecimal fromPrice(Price price) {
         return price.amount();
+    }
+
+    default StockResponse toStockResponse(StockWithArticleName stock) {
+        return new StockResponse(
+                stock.articleId().value(),
+                stock.articleName().value(),
+                stock.quantity().value()
+        );
     }
 }

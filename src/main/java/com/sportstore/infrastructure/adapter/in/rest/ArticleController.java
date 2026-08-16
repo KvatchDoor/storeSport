@@ -5,10 +5,12 @@ import com.sportstore.application.port.in.GetArticleUseCase;
 import com.sportstore.application.port.in.ListArticleNamesUseCase;
 import com.sportstore.application.port.in.ListArticlesUseCase;
 import com.sportstore.application.port.in.UpsertArticleUseCase;
+import com.sportstore.application.service.GetStocksWithArticlesService;
 import com.sportstore.domain.model.ArticleName;
 import com.sportstore.domain.model.Category;
 import com.sportstore.infrastructure.adapter.in.rest.api.ArticlesApi;
 import com.sportstore.infrastructure.adapter.in.rest.dto.ArticleResponse;
+import com.sportstore.infrastructure.adapter.in.rest.dto.StockResponse;
 import com.sportstore.infrastructure.adapter.in.rest.dto.UpsertArticleRequest;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,6 +25,7 @@ public class ArticleController implements ArticlesApi {
     private final GetArticleUseCase getArticleUseCase;
     private final UpsertArticleUseCase upsertArticleUseCase;
     private final DeleteArticleUseCase deleteArticleUseCase;
+    private final GetStocksWithArticlesService getStocksWithArticlesService;
     private final ArticleWebMapper mapper;
 
     public ArticleController(ListArticleNamesUseCase listArticleNamesUseCase,
@@ -30,12 +33,14 @@ public class ArticleController implements ArticlesApi {
                              GetArticleUseCase getArticleUseCase,
                              UpsertArticleUseCase upsertArticleUseCase,
                              DeleteArticleUseCase deleteArticleUseCase,
+                             GetStocksWithArticlesService getStocksWithArticlesService,
                              ArticleWebMapper mapper) {
         this.listArticleNamesUseCase = listArticleNamesUseCase;
         this.listArticlesUseCase = listArticlesUseCase;
         this.getArticleUseCase = getArticleUseCase;
         this.upsertArticleUseCase = upsertArticleUseCase;
         this.deleteArticleUseCase = deleteArticleUseCase;
+        this.getStocksWithArticlesService = getStocksWithArticlesService;
         this.mapper = mapper;
     }
 
@@ -70,5 +75,12 @@ public class ArticleController implements ArticlesApi {
     @Override
     public void deleteArticle(String name) {
         deleteArticleUseCase.deleteByName(mapper.toArticleName(name));
+    }
+
+    @Override
+    public List<StockResponse> getStocks() {
+        return getStocksWithArticlesService.getAll().stream()
+                .map(mapper::toStockResponse)
+                .toList();
     }
 }

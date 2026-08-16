@@ -6,7 +6,9 @@ import com.sportstore.application.port.in.ListArticleNamesUseCase;
 import com.sportstore.application.port.in.ListArticlesUseCase;
 import com.sportstore.application.port.in.UpsertArticleCommand;
 import com.sportstore.application.port.in.UpsertArticleUseCase;
+import com.sportstore.application.service.GetStocksWithArticlesService;
 import com.sportstore.domain.exception.ArticleNotFoundException;
+import com.sportstore.domain.exception.OutOfStockException;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleId;
 import com.sportstore.domain.model.ArticleName;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -61,6 +64,8 @@ class ArticleControllerTest {
     private UpsertArticleUseCase upsertArticleUseCase;
     @MockitoBean
     private DeleteArticleUseCase deleteArticleUseCase;
+    @MockitoBean
+    private GetStocksWithArticlesService getStocksWithArticlesService;
 
     @Test
     @DisplayName("GET /store/article-names retourne la liste des noms")
@@ -184,5 +189,17 @@ class ArticleControllerTest {
         mockMvc.perform(delete("/store/articles/{name}", "Bicycle"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Article not found: Bicycle"));
+    }
+
+    @Test
+    @DisplayName("GET /store/articles/{name} retourne 400 si le stock est épuisé")
+    void getArticleOutOfStock() throws Exception {
+        given(getArticleUseCase.getByName(new ArticleName("Soccer Ball")))
+                .willThrow(new OutOfStockException(ArticleId.of(SOCCER_BALL_ID)));
+
+        mockMvc.perform(get("/store/articles/{name}", "Soccer Ball"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").isNotEmpty())
+                .andExpect(jsonPath("$.error").value(containsString("out of stock")));
     }
 }

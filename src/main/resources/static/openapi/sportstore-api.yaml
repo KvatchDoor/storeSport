@@ -123,6 +123,23 @@ paths:
         '500':
           $ref: '#/components/responses/StorageFailure'
 
+  /store/articles/stocks:
+    get:
+      tags: [articles]
+      operationId: getStocks
+      summary: Consulte les stocks de tous les articles
+      responses:
+        '200':
+          description: Liste des stocks avec article id, nom et quantite
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockResponse'
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
 components:
 
   schemas:
@@ -170,6 +187,26 @@ components:
           minimum: 0
           description: Prix de vente, arrondi a deux decimales.
           example: 19.90
+
+    StockResponse:
+      type: object
+      description: Stock d'un article du catalogue.
+      required: [articleId, name, quantity]
+      properties:
+        articleId:
+          type: string
+          format: uuid
+          description: Identifiant technique de l'article.
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        name:
+          type: string
+          description: Nom de l'article.
+          example: Soccer Ball
+        quantity:
+          type: integer
+          format: int64
+          description: Quantite disponible du stock.
+          example: 12
 
     ErrorResponse:
       type: object
