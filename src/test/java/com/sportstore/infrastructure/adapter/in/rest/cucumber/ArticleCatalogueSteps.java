@@ -7,6 +7,7 @@ import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleName;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
+import com.sportstore.domain.model.Stock;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
@@ -23,6 +24,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -89,6 +91,12 @@ public class ArticleCatalogueSteps {
                 .toString();
     }
 
+    @Given("l'article {string} initialise avec un stock de {int}")
+    public void articleInitializeWithStock(String name, int quantity) {
+        // Mise à jour directe via JDBC pour éviter les problèmes de transaction avec Hibernate
+        jdbcTemplate.update("UPDATE article SET stock = ? WHERE name = ?", quantity, name);
+    }
+
     @Given("le stockage du catalogue est en panne")
     public void leStockageEstEnPanne() {
         willThrow(new ArticleStorageException("Lecture des noms d'articles impossible", connexionPerdue()))
@@ -145,6 +153,11 @@ public class ArticleCatalogueSteps {
     @When("je supprime l'article {string}")
     public void jeSupprimeArticle(String name) throws Exception {
         response = mockMvc.perform(delete("/store/articles/{name}", name));
+    }
+
+    @When("je demande la liste des stocks")
+    public void jeDemandeLaListeDesStocks() throws Exception {
+        response = mockMvc.perform(get("/store/articles/stocks"));
     }
 
     // ------------------------------------------------------------------ Alors
@@ -209,6 +222,54 @@ public class ArticleCatalogueSteps {
     @Then("le catalogue compte {int} article(s)")
     public void leCatalogueCompte(int expected) {
         assertThat(articleRepository.findAll()).as("articles reellement persistes").hasSize(expected);
+    }
+
+    @Then("le stock retourne est {int}")
+    public void leStockRetourneEst(int expected) throws Exception {
+        Integer stock = this.<Integer>jsonPath("$.stock");
+        assertThat(stock).as("stock retourne").isEqualTo(expected);
+    }
+
+    @Then("la liste des stocks contient :")
+    public void laListeDesStocksContient(DataTable expected) throws Exception {
+        List<Map<String, Object>> actualStocks = this.<List<Map<String, Object>>>jsonPath("$[*]");
+        List<Map<String, String>> actualFormatted = actualStocks.stream()
+                .map(stock -> {
+                    Map<String, String> row = new LinkedHashMap<>();
+                    row.put("nom", String.valueOf(stock.get("name")));
+                    row.put("quantity", String.valueOf(stock.get("quantity")));
+                    return row;
+                })
+                .toList();
+
+        List<Map<String, String>> expectedFormatted = expected.asMaps().stream()
+                .map(row -> {
+                    Map<String, String> normalized = new LinkedHashMap<>();
+                    normalized.put("nom", row.get("nom"));
+                    normalized.put("quantity", row.get("quantity"));
+                    return normalized;
+                })
+                .toList();
+
+        assertThat(actualFormatted).as("liste des stocks").containsExactlyElementsOf(expectedFormatted);
+    }
+
+    @Then("la liste des stocks ne contient pas {string}")
+    public void laListeDesStocksNeContientPas(String articleName) throws Exception {
+        List<String> names = this.<List<String>>jsonPath("$[*].name");
+        assertThat(names).as("noms dans la liste des stocks").doesNotContain(articleName);
+    }
+
+    @Then("les stocks pour {string} et {string} sont respectivement {int} et {int}")
+    public void lesStocksSontRespectively(String name1, String name2, int qty1, int qty2) throws Exception {
+        List<Map<String, Object>> stocks = this.<List<Map<String, Object>>>jsonPath("$[*]");
+
+        Map<String, Integer> stocksByName = stocks.stream()
+                .collect(java.util.HashMap::new,
+                        (map, stock) -> map.put(String.valueOf(stock.get("name")), ((Number) stock.get("quantity")).intValue()),
+                        HashMap::putAll);
+
+        assertThat(stocksByName).containsEntry(name1, qty1).containsEntry(name2, qty2);
     }
 
     // ------------------------------------------------------------------ Outillage

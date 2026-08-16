@@ -4,6 +4,7 @@ import com.sportstore.application.port.out.ArticleRepository;
 import com.sportstore.application.port.out.ArticleStorageException;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleName;
+import com.sportstore.domain.model.ArticleStock;
 import com.sportstore.domain.model.Category;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
@@ -83,6 +84,20 @@ public class JpaArticleRepository implements ArticleRepository {
             springDataRepository.deleteById(article.id().value());
         } catch (DataAccessException e) {
             throw new ArticleStorageException("Suppression de l'article " + article.name().value() + " impossible", e);
+        }
+    }
+
+    @Override
+    public List<ArticleStock> findAllStocks() {
+        try {
+            return springDataRepository.findAllByOrderByNameAsc().stream()
+                    .map(jpaEntity -> {
+                        Article article = mapper.toDomain(jpaEntity);
+                        return new ArticleStock(article.id(), article.name(), article.stock());
+                    })
+                    .toList();
+        } catch (DataAccessException e) {
+            throw new ArticleStorageException("Lecture des stocks impossible", e);
         }
     }
 }

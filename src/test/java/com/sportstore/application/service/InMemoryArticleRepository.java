@@ -3,6 +3,7 @@ package com.sportstore.application.service;
 import com.sportstore.application.port.out.ArticleRepository;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleName;
+import com.sportstore.domain.model.ArticleStock;
 import com.sportstore.domain.model.Category;
 
 import java.util.ArrayList;
@@ -59,6 +60,13 @@ class InMemoryArticleRepository implements ArticleRepository {
     @Override
     public void delete(Article article) {
         articles.remove(article.id().value());
+    }
+
+    @Override
+    public List<ArticleStock> findAllStocks() {
+        return findAll().stream()
+                .map(article -> new ArticleStock(article.id(), article.name(), article.stock()))
+                .toList();
     }
 
     int size() {

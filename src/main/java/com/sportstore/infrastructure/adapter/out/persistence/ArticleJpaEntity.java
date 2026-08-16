@@ -32,6 +32,9 @@ public class ArticleJpaEntity {
     @Column(name = "price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(name = "stock", nullable = false)
+    private int stock;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -46,6 +49,7 @@ public class ArticleJpaEntity {
         this.name = name;
         this.category = category;
         this.price = price;
+        this.stock = 0;
     }
 
     @PrePersist
@@ -94,5 +98,13 @@ public class ArticleJpaEntity {
 
     public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
     }
 }

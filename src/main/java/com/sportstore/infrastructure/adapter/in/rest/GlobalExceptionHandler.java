@@ -3,6 +3,7 @@ package com.sportstore.infrastructure.adapter.in.rest;
 import com.sportstore.application.port.out.ArticleStorageException;
 import com.sportstore.domain.exception.ArticleNotFoundException;
 import com.sportstore.domain.exception.InvalidArticleException;
+import com.sportstore.domain.exception.OutOfStockException;
 import com.sportstore.infrastructure.adapter.in.rest.dto.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidArticleException.class)
     public ResponseEntity<ErrorResponse> handleInvalidArticle(InvalidArticleException exception) {
         log.debug("400 - invariant du domaine viole : {}", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(exception.getMessage()));
+    }
+
+    @ExceptionHandler(OutOfStockException.class)
+    public ResponseEntity<ErrorResponse> handleOutOfStock(OutOfStockException exception) {
+        log.debug("400 - rupture de stock : {}", exception.articleName());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(exception.getMessage()));

@@ -72,11 +72,8 @@ class SportStoreApplicationIntegrationTest {
                 .andExpect(jsonPath("$.id").isNotEmpty())
                 .andExpect(jsonPath("$.name").value("Insulated Water Bottle"))
                 .andExpect(jsonPath("$.category").value("Accessories"))
-                .andExpect(jsonPath("$.price").value(19.90));
-
-        mockMvc.perform(get("/store/articles/{name}", "Insulated Water Bottle"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.category").value("Accessories"));
+                .andExpect(jsonPath("$.price").value(19.90))
+                .andExpect(jsonPath("$.stock").value(0));
 
         mockMvc.perform(put("/store/articles")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -85,7 +82,8 @@ class SportStoreApplicationIntegrationTest {
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.category").value("Hydration"))
-                .andExpect(jsonPath("$.price").value(22.00));
+                .andExpect(jsonPath("$.price").value(22.00))
+                .andExpect(jsonPath("$.stock").value(0));
 
         mockMvc.perform(get("/store/articles"))
                 .andExpect(status().isOk())

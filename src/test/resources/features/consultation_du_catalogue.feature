@@ -60,11 +60,13 @@ Fonctionnalité: Consultation du catalogue
       | Yoga Mat             | Fitness       | 24.90 |
 
   Scénario: Un article se consulte par son nom, espaces compris
+    Etant donné l'article "Soccer Ball" initialise avec un stock de 5
     Quand je consulte l'article "Soccer Ball"
     Alors la reponse a le statut 200
     Et l'article retourne est :
       | nom         | categorie   | prix  |
       | Soccer Ball | Team Sports | 29.99 |
+    Et le stock retourne est 4
 
   Scénario: Consulter un article absent du catalogue répond 404
     Quand je consulte l'article "Bicycle"

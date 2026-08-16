@@ -3,8 +3,10 @@ package com.sportstore.infrastructure.adapter.out.persistence;
 import com.sportstore.application.port.out.ArticleRepository;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleName;
+import com.sportstore.domain.model.ArticleStock;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
+import com.sportstore.domain.model.Stock;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -137,7 +139,7 @@ class JpaArticleRepositoryIntegrationTest {
         assertThat(article.getClass().getRecordComponents())
                 .as("Article ne connait ni created_at ni updated_at")
                 .extracting(java.lang.reflect.RecordComponent::getName)
-                .containsExactly("id", "name", "category", "price");
+                .containsExactly("id", "name", "category", "price", "stock");
     }
 
     @Test
@@ -149,5 +151,36 @@ class JpaArticleRepositoryIntegrationTest {
 
         assertThat(articleRepository.findByName(new ArticleName("Tennis Racket"))).isEmpty();
         assertThat(articleRepository.findAll()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("findAllStocks retourne tous les stocks avec les quantites")
+    void findAllStocks() {
+        var stocks = articleRepository.findAllStocks();
+
+        assertThat(stocks).hasSize(2);
+        assertThat(stocks).extracting(ArticleStock::articleName)
+                .extracting(ArticleName::value)
+                .containsExactly("Soccer Ball", "Tennis Racket");
+        assertThat(stocks).extracting(ArticleStock::stock)
+                .extracting(Stock::quantity)
+                .containsExactly(0, 0);
+    }
+
+    @Test
+    @DisplayName("findAllStocks reflechit les decrmentations de stock")
+    void findAllStocksReflectsDecrements() {
+        Article existing = articleRepository.findByName(new ArticleName("Soccer Ball")).orElseThrow();
+        Article withStock = new Article(existing.id(), existing.name(), existing.category(), existing.price(), new Stock(5));
+        articleRepository.save(withStock);
+
+        var stocks = articleRepository.findAllStocks();
+
+        assertThat(stocks).hasSize(2);
+        var soccerBallStock = stocks.stream()
+                .filter(s -> s.articleName().value().equals("Soccer Ball"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(soccerBallStock.stock().quantity()).isEqualTo(5);
     }
 }

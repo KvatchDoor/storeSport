@@ -1,6 +1,7 @@
 package com.sportstore.domain.model;
 
 import com.sportstore.domain.exception.InvalidArticleException;
+import com.sportstore.domain.exception.OutOfStockException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -62,5 +63,42 @@ class ArticleTest {
     void categoryIsMandatory() {
         assertThatThrownBy(() -> new Category(null))
                 .isInstanceOf(InvalidArticleException.class);
+    }
+
+    @Test
+    @DisplayName("decrementStock reduit la quantite d'une unite")
+    void decrementStockReducesQuantity() {
+        Article article = new Article(ArticleId.newId(), new ArticleName("Soccer Ball"),
+                new Category("Team Sports"), Price.of("29.99"), new Stock(5));
+
+        Article decremented = article.decrementStock();
+
+        assertThat(decremented.stock().quantity()).isEqualTo(4);
+        assertThat(decremented.id()).isEqualTo(article.id());
+        assertThat(decremented.name()).isEqualTo(article.name());
+    }
+
+    @Test
+    @DisplayName("decrementStock leve OutOfStockException si stock = 0")
+    void decrementStockThrowsWhenOutOfStock() {
+        Article article = new Article(ArticleId.newId(), new ArticleName("Tennis Racket"),
+                new Category("Racket Sports"), Price.of("89.50"), new Stock(0));
+
+        assertThatThrownBy(article::decrementStock)
+                .isInstanceOf(OutOfStockException.class)
+                .hasMessage("Out of stock: Tennis Racket");
+    }
+
+    @Test
+    @DisplayName("decrementStock cree un nouvel objet immutable")
+    void decrementStockCreatesNewInstance() {
+        Article article = new Article(ArticleId.newId(), new ArticleName("Basketball"),
+                new Category("Ball Sports"), Price.of("25.00"), new Stock(3));
+
+        Article decremented = article.decrementStock();
+
+        assertThat(decremented).isNotSameAs(article);
+        assertThat(article.stock().quantity()).isEqualTo(3);
+        assertThat(decremented.stock().quantity()).isEqualTo(2);
     }
 }

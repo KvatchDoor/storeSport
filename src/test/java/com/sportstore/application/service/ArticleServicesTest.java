@@ -2,10 +2,13 @@ package com.sportstore.application.service;
 
 import com.sportstore.application.port.in.UpsertArticleCommand;
 import com.sportstore.domain.exception.ArticleNotFoundException;
+import com.sportstore.domain.exception.OutOfStockException;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleName;
+import com.sportstore.domain.model.ArticleStock;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
+import com.sportstore.domain.model.Stock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -70,11 +73,40 @@ class ArticleServicesTest {
     class GetArticle {
 
         @Test
-        @DisplayName("retourne l'article recherche")
-        void returnsArticle() {
+        @DisplayName("retourne l'article recherche avec stock decrement")
+        void returnsArticleWithDecrementedStock() {
+            var articleWithStock = new Article(SOCCER_BALL.id(), SOCCER_BALL.name(), SOCCER_BALL.category(), SOCCER_BALL.price(), new Stock(5));
+            repository.save(articleWithStock);
+
             var article = new GetArticleService(repository).getByName(new ArticleName("Soccer Ball"));
 
-            assertThat(article).isEqualTo(SOCCER_BALL);
+            assertThat(article.id()).isEqualTo(SOCCER_BALL.id());
+            assertThat(article.name()).isEqualTo(SOCCER_BALL.name());
+            assertThat(article.stock().quantity()).isEqualTo(4);
+        }
+
+        @Test
+        @DisplayName("decrement le stock lors de la consultation")
+        void decrementsStock() {
+            var articleWithStock = Article.create(new ArticleName("Basketball"), new Category("Ball Sports"), Price.of("25.00"));
+            var incremented = new Article(articleWithStock.id(), articleWithStock.name(), articleWithStock.category(), articleWithStock.price(), new Stock(5));
+            repository.save(incremented);
+
+            var result = new GetArticleService(repository).getByName(new ArticleName("Basketball"));
+
+            assertThat(result.stock().quantity()).isEqualTo(4);
+            var persisted = repository.findByName(new ArticleName("Basketball")).orElseThrow();
+            assertThat(persisted.stock().quantity()).isEqualTo(4);
+        }
+
+        @Test
+        @DisplayName("leve OutOfStockException si le stock est a 0")
+        void throwsOutOfStockException() {
+            var service = new GetArticleService(repository);
+
+            assertThatThrownBy(() -> service.getByName(new ArticleName("Soccer Ball")))
+                    .isInstanceOf(OutOfStockException.class)
+                    .hasMessage("Out of stock: Soccer Ball");
         }
 
         @Test
@@ -139,6 +171,39 @@ class ArticleServicesTest {
             assertThatThrownBy(() -> service.deleteByName(new ArticleName("Bicycle")))
                     .isInstanceOf(ArticleNotFoundException.class)
                     .hasMessage("Article not found: Bicycle");
+        }
+    }
+
+    @Nested
+    class ListStocks {
+
+        @Test
+        @DisplayName("retourne tous les stocks avec les quantites actuelles")
+        void returnsAllStocks() {
+            var stocks = new ListArticleStocksService(repository).listStocks();
+
+            assertThat(stocks).hasSize(2);
+            assertThat(stocks).extracting(ArticleStock::articleName)
+                    .extracting(ArticleName::value)
+                    .containsExactly("Soccer Ball", "Tennis Racket");
+            assertThat(stocks).extracting(ArticleStock::stock)
+                    .extracting(Stock::quantity)
+                    .containsExactly(0, 0);
+        }
+
+        @Test
+        @DisplayName("retourne les stocks reflechissant les decrmentations")
+        void returnsUpdatedStocks() {
+            var article = Article.create(new ArticleName("Volleyball"), new Category("Ball Sports"), Price.of("15.50"));
+            var withStock = new Article(article.id(), article.name(), article.category(), article.price(), new Stock(7));
+            repository.save(withStock);
+
+            var stocks = new ListArticleStocksService(repository).listStocks();
+
+            assertThat(stocks).hasSize(3);
+            assertThat(stocks).extracting(ArticleStock::stock)
+                    .extracting(Stock::quantity)
+                    .containsExactly(0, 0, 7);
         }
     }
 }

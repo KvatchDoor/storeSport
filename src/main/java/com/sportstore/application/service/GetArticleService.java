@@ -27,8 +27,12 @@ public class GetArticleService implements GetArticleUseCase {
         Article article = articleRepository.findByName(name)
                 .orElseThrow(() -> new ArticleNotFoundException(name));
 
-        log.debug("Consultation de l'article {}", article.name());
+        Article decremented = article.decrementStock();
+        articleRepository.save(decremented);
 
-        return article;
+        log.info("Article consulte et stock decrement: {}, nouveau stock={}",
+                article.name(), decremented.stock().quantity());
+
+        return decremented;
     }
 }

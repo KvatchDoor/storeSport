@@ -4,14 +4,18 @@ import com.sportstore.application.port.in.DeleteArticleUseCase;
 import com.sportstore.application.port.in.GetArticleUseCase;
 import com.sportstore.application.port.in.ListArticleNamesUseCase;
 import com.sportstore.application.port.in.ListArticlesUseCase;
+import com.sportstore.application.port.in.ListArticleStocksUseCase;
 import com.sportstore.application.port.in.UpsertArticleCommand;
 import com.sportstore.application.port.in.UpsertArticleUseCase;
 import com.sportstore.domain.exception.ArticleNotFoundException;
+import com.sportstore.domain.exception.OutOfStockException;
 import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleId;
 import com.sportstore.domain.model.ArticleName;
+import com.sportstore.domain.model.ArticleStock;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
+import com.sportstore.domain.model.Stock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +50,7 @@ class ArticleControllerTest {
 
     private static final UUID SOCCER_BALL_ID = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
     private static final Article SOCCER_BALL = new Article(
-            ArticleId.of(SOCCER_BALL_ID), new ArticleName("Soccer Ball"), new Category("Team Sports"), Price.of("29.99"));
+            ArticleId.of(SOCCER_BALL_ID), new ArticleName("Soccer Ball"), new Category("Team Sports"), Price.of("29.99"), new com.sportstore.domain.model.Stock(0));
 
     @Autowired
     private MockMvc mockMvc;
@@ -61,6 +65,8 @@ class ArticleControllerTest {
     private UpsertArticleUseCase upsertArticleUseCase;
     @MockitoBean
     private DeleteArticleUseCase deleteArticleUseCase;
+    @MockitoBean
+    private ListArticleStocksUseCase listArticleStocksUseCase;
 
     @Test
     @DisplayName("GET /store/article-names retourne la liste des noms")
@@ -101,14 +107,15 @@ class ArticleControllerTest {
     }
 
     @Test
-    @DisplayName("GET /store/articles/{name} retourne l'article")
+    @DisplayName("GET /store/articles/{name} retourne l'article avec son stock")
     void getArticle() throws Exception {
         given(getArticleUseCase.getByName(new ArticleName("Soccer Ball"))).willReturn(SOCCER_BALL);
 
         mockMvc.perform(get("/store/articles/{name}", "Soccer Ball"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(SOCCER_BALL_ID.toString()))
-                .andExpect(jsonPath("$.price").value(29.99));
+                .andExpect(jsonPath("$.price").value(29.99))
+                .andExpect(jsonPath("$.stock").value(0));
     }
 
     @Test
@@ -123,11 +130,22 @@ class ArticleControllerTest {
     }
 
     @Test
+    @DisplayName("GET /store/articles/{name} retourne 400 si l'article est en rupture de stock")
+    void getArticleOutOfStock() throws Exception {
+        given(getArticleUseCase.getByName(new ArticleName("Soccer Ball")))
+                .willThrow(new OutOfStockException(new ArticleName("Soccer Ball")));
+
+        mockMvc.perform(get("/store/articles/{name}", "Soccer Ball"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Out of stock: Soccer Ball"));
+    }
+
+    @Test
     @DisplayName("PUT /store/articles cree ou remplace l'article")
     void upsertArticle() throws Exception {
         UUID id = UUID.fromString("e5f6a7b8-c9d0-1234-ef01-567890123456");
         Article bottle = new Article(ArticleId.of(id), new ArticleName("Insulated Water Bottle"),
-                new Category("Accessories"), Price.of("19.90"));
+                new Category("Accessories"), Price.of("19.90"), new com.sportstore.domain.model.Stock(0));
         given(upsertArticleUseCase.upsert(any(UpsertArticleCommand.class))).willReturn(bottle);
 
         mockMvc.perform(put("/store/articles")
@@ -184,5 +202,25 @@ class ArticleControllerTest {
         mockMvc.perform(delete("/store/articles/{name}", "Bicycle"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Article not found: Bicycle"));
+    }
+
+    @Test
+    @DisplayName("GET /store/articles/stocks retourne la liste des stocks")
+    void listStocks() throws Exception {
+        UUID id1 = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
+        UUID id2 = UUID.fromString("b2c3d4e5-f6a7-8901-bcde-f12345678901");
+        given(listArticleStocksUseCase.listStocks()).willReturn(List.of(
+                new ArticleStock(ArticleId.of(id1), new ArticleName("Soccer Ball"), new Stock(0)),
+                new ArticleStock(ArticleId.of(id2), new ArticleName("Tennis Racket"), new Stock(3))
+        ));
+
+        mockMvc.perform(get("/store/articles/stocks"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(id1.toString()))
+                .andExpect(jsonPath("$[0].name").value("Soccer Ball"))
+                .andExpect(jsonPath("$[0].quantity").value(0))
+                .andExpect(jsonPath("$[1].id").value(id2.toString()))
+                .andExpect(jsonPath("$[1].name").value("Tennis Racket"))
+                .andExpect(jsonPath("$[1].quantity").value(3));
     }
 }

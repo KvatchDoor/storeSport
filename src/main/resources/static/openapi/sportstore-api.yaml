@@ -36,6 +36,25 @@ paths:
         '500':
           $ref: '#/components/responses/StorageFailure'
 
+  /store/articles/stocks:
+    get:
+      tags: [articles]
+      operationId: listStocks
+      summary: Liste les stocks de tous les articles
+      responses:
+        '200':
+          description: Stocks de tous les articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
   /store/articles:
     get:
       tags: [articles]
@@ -106,6 +125,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          $ref: '#/components/responses/OutOfStock'
         '404':
           $ref: '#/components/responses/ArticleNotFound'
         '500':
@@ -127,10 +148,30 @@ components:
 
   schemas:
 
+    StockResponse:
+      type: object
+      description: Stock d'un article du catalogue.
+      required: [id, name, quantity]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifiant technique de l'article.
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        name:
+          type: string
+          description: Nom de l'article.
+          example: Soccer Ball
+        quantity:
+          type: integer
+          minimum: 0
+          description: Quantite disponible en stock.
+          example: 42
+
     ArticleResponse:
       type: object
       description: Article du catalogue.
-      required: [id, name, category, price]
+      required: [id, name, category, price, stock]
       properties:
         id:
           type: string
@@ -148,6 +189,11 @@ components:
           type: number
           description: Prix de vente, a deux decimales.
           example: 29.99
+        stock:
+          type: integer
+          minimum: 0
+          description: Quantite disponible en stock.
+          example: 42
 
     UpsertArticleRequest:
       type: object
@@ -184,6 +230,13 @@ components:
 
     InvalidRequest:
       description: Requete invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    OutOfStock:
+      description: Article rupture de stock
       content:
         application/json:
           schema:

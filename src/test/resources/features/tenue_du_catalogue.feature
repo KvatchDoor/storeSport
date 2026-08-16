@@ -28,11 +28,13 @@ Fonctionnalité: Tenue du catalogue
     Quand j'enregistre l'article suivant :
       | nom                    | categorie   | prix  |
       | Insulated Water Bottle | Accessories | 19.90 |
+    Et l'article "Insulated Water Bottle" initialise avec un stock de 2
     Et je consulte l'article "Insulated Water Bottle"
     Alors la reponse a le statut 200
     Et l'article retourne est :
       | nom                    | categorie   | prix  |
       | Insulated Water Bottle | Accessories | 19.90 |
+    Et le stock retourne est 1
 
   Scénario: Enregistrer un nom existant remplace l'article sans changer son identifiant
     Etant donné que je note l'identifiant de l'article "Yoga Mat"
