@@ -1,0 +1,40 @@
+meta {
+  name: GET articles?category — filtre par categorie
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/store/articles?category=Fitness
+  body: none
+  auth: inherit
+}
+
+params:query {
+  category: Fitness
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("repond 200", function () {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("ne renvoie que des articles de la categorie demandee", function () {
+    expect(res.getBody()).to.be.an("array").and.not.be.empty;
+    res.getBody().forEach((article) => expect(article.category).to.equal("Fitness"));
+  });
+
+  test("renvoie le Yoga Mat du jeu de donnees initial", function () {
+    const names = res.getBody().map((article) => article.name);
+    expect(names).to.include("Yoga Mat");
+  });
+}
+
+docs {
+  `GET /store/articles?category=Fitness` — 200, filtre exact sur la categorie
+  (`findByCategoryOrderByNameAsc`).
+}

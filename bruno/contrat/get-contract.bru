@@ -1,0 +1,51 @@
+meta {
+  name: GET contrat — le YAML publie
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/openapi/sportstore-api.yaml
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/yaml
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:8080
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("le contrat est servi en application/yaml", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("content-type")).to.contain("application/yaml");
+  });
+  
+  test("c'est bien une specification OpenAPI 3", function () {
+    const contract = String(res.getBody());
+    expect(contract).to.match(/^openapi: 3\./);
+    expect(contract).to.contain("title: sportStore API");
+  });
+  
+  test("les cinq operations du catalogue y figurent", function () {
+    const contract = String(res.getBody());
+    ["listNames", "listArticles", "getArticle", "upsertArticle", "deleteArticle"]
+      .forEach((operation) => expect(contract).to.contain(`operationId: ${operation}`));
+  });
+  
+  test("les codes de statut de chaque cas d'erreur sont documentes", function () {
+    const contract = String(res.getBody());
+    ["'400'", "'404'", "'500'", "'204'"].forEach((status) => expect(contract).to.contain(status));
+  });
+}
+
+docs {
+  Swagger UI (`/openapi/index.html`) lit exactement cette URL.
+}

@@ -1,0 +1,32 @@
+meta {
+  name: GET Swagger UI
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/openapi/index.html
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: text/html
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("Swagger UI est servi", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("content-type")).to.contain("text/html");
+  });
+
+  test("l'UI pointe sur le contrat versionne, pas sur une specification introspectee", function () {
+    const page = String(res.getBody());
+    expect(page).to.contain("url: '/openapi/sportstore-api.yaml'");
+    expect(page).to.not.contain("/v3/api-docs");
+  });
+}

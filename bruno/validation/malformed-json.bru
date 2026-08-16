@@ -1,0 +1,35 @@
+meta {
+  name: PUT article — 400 JSON malforme
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: text
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:text {
+  { "name": "Bruno Broken", "category": "Accessories", "price": }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("un corps JSON illisible renvoie 400 et non 500", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+}
+
+docs {
+  Un JSON syntaxiquement invalide ne doit jamais produire une 500. Le corps de la
+  reponse est ici celui par defaut de Spring (aucun handler dedie a
+  `HttpMessageNotReadableException`), seul le statut est verifie.
+}

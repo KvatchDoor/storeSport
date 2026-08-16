@@ -5,9 +5,6 @@ import com.sportstore.domain.exception.InvalidArticleException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-/**
- * Prix de vente d'un article, normalise a deux decimales.
- */
 public record Price(BigDecimal amount) {
 
     private static final int SCALE = 2;

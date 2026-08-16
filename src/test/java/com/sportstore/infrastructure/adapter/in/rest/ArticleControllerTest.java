@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests de l'adaptateur primaire : les ports {@code in} sont mockes, aucun use case reel n'est appele.
  */
 @WebMvcTest(ArticleController.class)
-@Import(ArticleWebMapper.class)
+@Import(ArticleWebMapperImpl.class)
 class ArticleControllerTest {
 
     private static final UUID SOCCER_BALL_ID = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
@@ -63,12 +63,12 @@ class ArticleControllerTest {
     private DeleteArticleUseCase deleteArticleUseCase;
 
     @Test
-    @DisplayName("GET /store/articles/names retourne la liste des noms")
+    @DisplayName("GET /store/article-names retourne la liste des noms")
     void listNames() throws Exception {
         given(listArticleNamesUseCase.listNames())
                 .willReturn(List.of(new ArticleName("Soccer Ball"), new ArticleName("Tennis Racket")));
 
-        mockMvc.perform(get("/store/articles/names"))
+        mockMvc.perform(get("/store/article-names"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$[0]").value("Soccer Ball"))

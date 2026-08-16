@@ -3,9 +3,6 @@ package com.sportstore.domain.model;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Identifiant d'un article. L'identite est generee par le domaine, jamais par la couche de persistance.
- */
 public record ArticleId(UUID value) {
 
     public ArticleId {

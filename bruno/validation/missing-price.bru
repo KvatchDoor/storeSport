@@ -1,0 +1,42 @@
+meta {
+  name: PUT article — 400 prix absent
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno Missing Price",
+    "category": "Accessories"
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("un prix absent est rejete en 400", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("l'erreur designe le champ fautif", function () {
+    expect(res.getBody().error).to.match(/^price : /);
+    expect(res.getBody().error).to.contain("must not be null");
+  });
+}
+
+docs {
+  `price` figure dans le `required` du schema `UpsertArticleRequest` : le DTO genere porte
+  donc `@NotNull`. Un champ absent du JSON vaut `null`.
+}

@@ -1,0 +1,55 @@
+meta {
+  name: PUT article — creation
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{testArticleName}}",
+    "category": "Accessories",
+    "price": 19.90
+  }
+}
+
+vars:post-response {
+  createdArticleId: res.body.id
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("la creation repond 200 avec l'article persiste", function () {
+    expect(res.getStatus()).to.equal(200);
+
+    const article = res.getBody();
+    expect(article.name).to.equal(bru.getEnvVar("testArticleName"));
+    expect(article.category).to.equal("Accessories");
+    expect(article.price).to.equal(19.9);
+  });
+
+  test("l'identite est generee par le domaine", function () {
+    expect(res.getBody().id).to.match(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    );
+    expect(bru.getVar("createdArticleId")).to.equal(res.getBody().id);
+  });
+}
+
+docs {
+  `PUT /store/articles` sur un nom inconnu cree l'article et renvoie 200 (pas 201).
+  L'`id` genere est memorise dans la variable d'execution `createdArticleId`,
+  utilisee par les requetes suivantes.
+}

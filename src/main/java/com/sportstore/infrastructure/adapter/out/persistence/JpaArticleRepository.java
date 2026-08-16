@@ -11,12 +11,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Adaptateur secondaire : implementation JPA du port {@link ArticleRepository}.
- * <p>
- * Toute exception technique est mappee en {@link ArticleStorageException} avant de quitter
- * l'adaptateur : la couche application n'a aucune connaissance de Spring Data ni de JDBC.
- */
 @Component
 public class JpaArticleRepository implements ArticleRepository {
 
@@ -73,8 +67,11 @@ public class JpaArticleRepository implements ArticleRepository {
     @Override
     public Article save(Article article) {
         try {
-            ArticleJpaEntity saved = springDataRepository.save(mapper.toEntity(article));
-            return mapper.toDomain(saved);
+            ArticleJpaEntity entity = springDataRepository.findById(article.id().value())
+                    .map(existing -> mapper.updateEntity(existing, article))
+                    .orElseGet(() -> mapper.toEntity(article));
+
+            return mapper.toDomain(springDataRepository.save(entity));
         } catch (DataAccessException e) {
             throw new ArticleStorageException("Enregistrement de l'article " + article.name().value() + " impossible", e);
         }

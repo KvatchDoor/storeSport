@@ -1,0 +1,46 @@
+meta {
+  name: PUT article — normalisation (trim du nom, arrondi du prix)
+  type: http
+  seq: 8
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "  Bruno Normalized Probe  ",
+    "category": "  Accessories  ",
+    "price": 19.999
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("le nom et la categorie sont trimes par les Value Objects", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal("Bruno Normalized Probe");
+    expect(res.getBody().category).to.equal("Accessories");
+  });
+
+  test("le prix est arrondi a deux decimales (HALF_UP)", function () {
+    expect(res.getBody().price).to.equal(20);
+  });
+}
+
+docs {
+  `ArticleName` et `Category` appliquent un `trim()`, `Price` un
+  `setScale(2, HALF_UP)` : 19.999 devient 20.00.
+
+  L'article cree ici est supprime par la requete suivante (`cleanup`).
+}

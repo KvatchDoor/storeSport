@@ -1,0 +1,30 @@
+meta {
+  name: DELETE article — 404 article inconnu
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/store/articles/{{testArticleNameEncoded}}
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("supprimer un article inconnu renvoie 404, pas 204", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(Object.keys(res.getBody())).to.eql(["error"]);
+    expect(res.getBody().error).to.equal(
+      `Article not found: ${bru.getEnvVar("testArticleName")}`
+    );
+  });
+}
+
+docs {
+  La suppression n'est pas idempotente cote HTTP : `DeleteArticleService` leve
+  `ArticleNotFoundException` si le nom n'existe pas.
+}

@@ -1,0 +1,35 @@
+meta {
+  name: GET articles?category= — parametre vide ignore
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/store/articles?category=
+  body: none
+  auth: inherit
+}
+
+params:query {
+  category:
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("un parametre category vide est ignore : le catalogue complet est renvoye", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.an("array");
+    expect(res.getBody().length).to.be.at.least(5);
+
+    const categories = new Set(res.getBody().map((article) => article.category));
+    expect(categories.size).to.be.at.least(2);
+  });
+}
+
+docs {
+  Le controleur filtre les valeurs blanches (`filter(value -> !value.isBlank())`) :
+  `?category=` se comporte comme une absence de filtre, sans lever `InvalidArticleException`.
+}

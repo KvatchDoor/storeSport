@@ -1,0 +1,58 @@
+meta {
+  name: GET articles — liste complete
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/store/articles
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  test("repond 200 avec un tableau d'articles", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.an("array");
+    expect(res.getBody().length).to.be.at.least(5);
+  });
+
+  test("chaque article expose id / name / category / price et rien d'autre", function () {
+    res.getBody().forEach((article) => {
+      expect(Object.keys(article).sort()).to.eql(["category", "id", "name", "price"]);
+      expect(article.id).to.match(UUID_RE);
+      expect(article.name).to.be.a("string").and.not.be.empty;
+      expect(article.category).to.be.a("string").and.not.be.empty;
+      expect(article.price).to.be.a("number").and.to.be.at.least(0);
+    });
+  });
+
+  test("aucun detail de persistance ne fuit dans la reponse", function () {
+    res.getBody().forEach((article) => {
+      expect(article).to.not.have.property("version");
+      expect(article).to.not.have.property("createdAt");
+    });
+  });
+
+  test("le Soccer Ball du jeu de donnees initial est present et intact", function () {
+    const ball = res.getBody().find((article) => article.name === "Soccer Ball");
+    expect(ball, "Soccer Ball absent du catalogue").to.exist;
+    expect(ball.category).to.equal("Team Sports");
+    expect(ball.price).to.equal(29.99);
+  });
+
+  test("les articles sont tries par nom croissant", function () {
+    const names = res.getBody().map((article) => article.name);
+    expect(names).to.eql([...names].sort());
+  });
+}
+
+docs {
+  `GET /store/articles` sans parametre — 200, catalogue complet trie par nom.
+}

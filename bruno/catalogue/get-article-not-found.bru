@@ -1,0 +1,31 @@
+meta {
+  name: GET article — 404 article inconnu
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{baseUrl}}/store/articles/Bicycle
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("un article inconnu renvoie 404", function () {
+    expect(res.getStatus()).to.equal(404);
+  });
+
+  test("le corps suit le format ErrorResponse", function () {
+    expect(Object.keys(res.getBody())).to.eql(["error"]);
+    expect(res.getBody().error).to.equal("Article not found: Bicycle");
+  });
+}
+
+docs {
+  `ArticleNotFoundException` est traduite en 404 par `GlobalExceptionHandler`,
+  avec le corps standard `{"error": "..."}`.
+}

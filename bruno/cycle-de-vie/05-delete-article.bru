@@ -1,0 +1,29 @@
+meta {
+  name: DELETE article — 204 sans corps
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/store/articles/{{testArticleNameEncoded}}
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 204
+}
+
+tests {
+  test("la suppression repond 204 sans corps", function () {
+    expect(res.getStatus()).to.equal(204);
+
+    const body = res.getBody();
+    const empty = body === undefined || body === null || body === "";
+    expect(empty, `corps attendu vide, recu : ${JSON.stringify(body)}`).to.be.true;
+  });
+}
+
+docs {
+  `DELETE /store/articles/{name}` — 204 No Content, aucun corps de reponse.
+}

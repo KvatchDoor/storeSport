@@ -1,0 +1,204 @@
+openapi: 3.0.3
+
+info:
+  title: sportStore API
+  description: |
+    Catalogue d'articles de sport.
+  version: 1.0.0
+  license:
+    name: Proprietaire
+
+servers:
+  - url: http://localhost:8080
+    description: Instance locale de developpement
+
+tags:
+  - name: articles
+    description: Consultation et tenue du catalogue
+
+paths:
+
+  /store/article-names:
+    get:
+      tags: [articles]
+      operationId: listNames
+      summary: Liste les noms du catalogue
+      responses:
+        '200':
+          description: Noms des articles, tries par ordre croissant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+              example: ["Mountain Bike Helmet", "Running Shoes", "Soccer Ball"]
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
+  /store/articles:
+    get:
+      tags: [articles]
+      operationId: listArticles
+      summary: Liste les articles du catalogue
+      parameters:
+        - name: category
+          in: query
+          required: false
+          description: Filtre exact sur la categorie
+          schema:
+            type: string
+          example: Fitness
+      responses:
+        '200':
+          description: Articles correspondants, tries par nom croissant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
+    put:
+      tags: [articles]
+      operationId: upsertArticle
+      summary: Cree ou remplace un article
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpsertArticleRequest'
+      responses:
+        '200':
+          description: Article cree ou remplace, tel que persiste
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
+  /store/articles/{name}:
+    parameters:
+      - name: name
+        in: path
+        required: true
+        description: Nom exact de l'article, encode dans l'URL
+        schema:
+          type: string
+        example: Soccer Ball
+
+    get:
+      tags: [articles]
+      operationId: getArticle
+      summary: Consulte un article par son nom
+      responses:
+        '200':
+          description: Article demande
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleResponse'
+        '404':
+          $ref: '#/components/responses/ArticleNotFound'
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
+    delete:
+      tags: [articles]
+      operationId: deleteArticle
+      summary: Supprime un article
+      responses:
+        '204':
+          description: Article supprime, sans corps de reponse
+        '404':
+          $ref: '#/components/responses/ArticleNotFound'
+        '500':
+          $ref: '#/components/responses/StorageFailure'
+
+components:
+
+  schemas:
+
+    ArticleResponse:
+      type: object
+      description: Article du catalogue.
+      required: [id, name, category, price]
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Identifiant technique de l'article.
+          example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+        name:
+          type: string
+          description: Nom de l'article.
+          example: Soccer Ball
+        category:
+          type: string
+          example: Team Sports
+        price:
+          type: number
+          description: Prix de vente, a deux decimales.
+          example: 29.99
+
+    UpsertArticleRequest:
+      type: object
+      description: Article a creer ou a remplacer.
+      required: [name, category, price]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+          description: Nom de l'article, espaces de tete et de fin ignores.
+          example: Insulated Water Bottle
+        category:
+          type: string
+          minLength: 1
+          maxLength: 80
+          example: Accessories
+        price:
+          type: number
+          minimum: 0
+          description: Prix de vente, arrondi a deux decimales.
+          example: 19.90
+
+    ErrorResponse:
+      type: object
+      description: Corps des reponses d'erreur.
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: 'Article not found: Bicycle'
+
+  responses:
+
+    InvalidRequest:
+      description: Requete invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ArticleNotFound:
+      description: Aucun article ne porte ce nom
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    StorageFailure:
+      description: Echec d'acces au stockage
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

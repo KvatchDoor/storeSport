@@ -1,0 +1,43 @@
+meta {
+  name: PUT article — 400 prix negatif
+  type: http
+  seq: 5
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno Negative Price",
+    "category": "Accessories",
+    "price": -1.00
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("un prix negatif est rejete en 400", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("l'erreur designe le champ fautif", function () {
+    expect(res.getBody().error).to.match(/^price : /);
+    expect(res.getBody().error).to.contain("must be greater than or equal to 0");
+  });
+}
+
+docs {
+  `minimum: 0` du contrat est genere en `@DecimalMin(value = "0")`. La defense est double :
+  meme sans le contrat, le Value Object `Price` refuserait un montant negatif.
+}

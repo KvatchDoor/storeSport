@@ -1,0 +1,37 @@
+meta {
+  name: GET article — par nom
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/store/articles/Soccer%20Ball
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("repond 200 avec l'article demande", function () {
+    expect(res.getStatus()).to.equal(200);
+
+    const article = res.getBody();
+    expect(article.name).to.equal("Soccer Ball");
+    expect(article.category).to.equal("Team Sports");
+    expect(article.price).to.equal(29.99);
+    expect(article.id).to.be.a("string").and.not.be.empty;
+  });
+
+  test("le prix est normalise a deux decimales", function () {
+    const raw = String(res.getBody().price);
+    expect(raw).to.match(/^\d+(\.\d{1,2})?$/);
+  });
+}
+
+docs {
+  `GET /store/articles/{name}` — le nom est l'identifiant naturel, il doit etre
+  encode dans l'URL (`Soccer%20Ball`).
+}

@@ -5,6 +5,7 @@ import com.sportstore.domain.model.Article;
 import com.sportstore.domain.model.ArticleName;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.TestPropertySource;
+
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,6 +28,19 @@ class JpaArticleRepositoryIntegrationTest {
 
     @Autowired
     private ArticleRepository articleRepository;
+
+    @Autowired
+    private ArticleSpringDataRepository springDataRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    private ArticleJpaEntity entityOf(String name) {
+        entityManager.flush();
+        entityManager.clear();
+
+        return springDataRepository.findByName(name).orElseThrow();
+    }
 
     @BeforeEach
     void setUp() {
@@ -78,6 +94,50 @@ class JpaArticleRepositoryIntegrationTest {
         assertThat(articleRepository.findAll()).hasSize(2);
         assertThat(articleRepository.findByName(new ArticleName("Soccer Ball")))
                 .hasValueSatisfying(article -> assertThat(article.category().value()).isEqualTo("Outdoor"));
+    }
+
+    @Test
+    @DisplayName("les horodatages sont renseignes a la creation")
+    void auditTimestampsAreSetOnInsert() {
+        ArticleJpaEntity entity = entityOf("Soccer Ball");
+
+        assertThat(entity.getCreatedAt()).isNotNull();
+        assertThat(entity.getUpdatedAt()).isNotNull();
+        assertThat(entity.getUpdatedAt()).isEqualTo(entity.getCreatedAt());
+    }
+
+    @Test
+    @DisplayName("une mise a jour conserve created_at et avance updated_at")
+    void updatePreservesCreatedAtAndAdvancesUpdatedAt() throws InterruptedException {
+        ArticleJpaEntity before = entityOf("Soccer Ball");
+        Instant createdAt = before.getCreatedAt();
+        Instant updatedAt = before.getUpdatedAt();
+
+        // l'horloge doit avancer pour que la comparaison soit deterministe
+        Thread.sleep(10);
+
+        Article existing = articleRepository.findByName(new ArticleName("Soccer Ball")).orElseThrow();
+        articleRepository.save(existing.replaceWith(new Category("Outdoor"), Price.of("34.50")));
+
+        ArticleJpaEntity after = entityOf("Soccer Ball");
+
+        assertThat(after.getCreatedAt())
+                .as("created_at ne doit jamais etre reecrit par une mise a jour")
+                .isEqualTo(createdAt);
+        assertThat(after.getUpdatedAt())
+                .as("updated_at doit refleter la derniere ecriture")
+                .isAfter(updatedAt);
+    }
+
+    @Test
+    @DisplayName("les horodatages restent confines a la persistance")
+    void auditTimestampsNeverCrossThePort() {
+        Article article = articleRepository.findByName(new ArticleName("Soccer Ball")).orElseThrow();
+
+        assertThat(article.getClass().getRecordComponents())
+                .as("Article ne connait ni created_at ni updated_at")
+                .extracting(java.lang.reflect.RecordComponent::getName)
+                .containsExactly("id", "name", "category", "price");
     }
 
     @Test

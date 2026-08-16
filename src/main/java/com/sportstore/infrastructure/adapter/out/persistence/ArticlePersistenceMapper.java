@@ -7,9 +7,6 @@ import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
 import org.springframework.stereotype.Component;
 
-/**
- * Traduction entre le modele de persistance et le modele du domaine.
- */
 @Component
 public class ArticlePersistenceMapper {
 
@@ -29,6 +26,14 @@ public class ArticlePersistenceMapper {
                 article.category().value(),
                 article.price().amount()
         );
+    }
+
+    ArticleJpaEntity updateEntity(ArticleJpaEntity entity, Article article) {
+        entity.setName(article.name().value());
+        entity.setCategory(article.category().value());
+        entity.setPrice(article.price().amount());
+
+        return entity;
     }
 
     ArticleName toArticleName(String name) {

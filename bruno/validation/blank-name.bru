@@ -1,0 +1,47 @@
+meta {
+  name: PUT article — 400 nom fait d'espaces (invariant du domaine)
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "   ",
+    "category": "Accessories",
+    "price": 19.90
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("un nom fait uniquement d'espaces est rejete en 400", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(Object.keys(res.getBody())).to.eql(["error"]);
+  });
+
+  test("c'est le domaine qui refuse, pas le contrat", function () {
+    expect(res.getBody().error).to.equal("Le nom de l'article est obligatoire");
+  });
+}
+
+docs {
+  `minLength: 1` dans le contrat laisse passer `"   "` : trois espaces font bien un caractere.
+  C'est l'invariant du Value Object `ArticleName` qui tranche, et `InvalidArticleException`
+  est traduite en 400 par `GlobalExceptionHandler`.
+
+  Ce cas est la demonstration que le contrat ne remplace pas le domaine : il filtre la forme,
+  le domaine garantit le sens.
+}

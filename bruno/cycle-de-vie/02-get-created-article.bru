@@ -1,0 +1,33 @@
+meta {
+  name: GET article — relecture apres creation
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/store/articles/{{testArticleNameEncoded}}
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("l'article cree est relisible par son nom", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().name).to.equal(bru.getEnvVar("testArticleName"));
+    expect(res.getBody().category).to.equal("Accessories");
+    expect(res.getBody().price).to.equal(19.9);
+  });
+
+  test("l'id relu est celui renvoye a la creation", function () {
+    expect(res.getBody().id).to.equal(bru.getVar("createdArticleId"));
+  });
+}
+
+docs {
+  Verifie la persistance reelle : l'article cree a l'etape precedente est relu
+  depuis la base, pas depuis un cache de reponse.
+}

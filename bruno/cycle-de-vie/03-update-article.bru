@@ -1,0 +1,44 @@
+meta {
+  name: PUT article — mise a jour, id conserve
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "{{testArticleName}}",
+    "category": "Hydration",
+    "price": 24.50
+  }
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("les caracteristiques sont integralement remplacees", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody().category).to.equal("Hydration");
+    expect(res.getBody().price).to.equal(24.5);
+  });
+
+  test("le nom etant l'identifiant naturel, l'id est conserve", function () {
+    expect(res.getBody().id).to.equal(bru.getVar("createdArticleId"));
+  });
+}
+
+docs {
+  Second `PUT` sur le meme nom : `UpsertArticleService` retrouve l'article existant
+  et appelle `replaceWith(...)`. L'identite (`ArticleId`) ne doit pas changer.
+}

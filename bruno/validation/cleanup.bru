@@ -1,0 +1,26 @@
+meta {
+  name: DELETE — nettoyage de l'article de normalisation
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/store/articles/Bruno%20Normalized%20Probe
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 204
+}
+
+tests {
+  test("l'article de test est supprime, la collection est rejouable", function () {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+docs {
+  Nettoyage : sans lui, un second passage de la collection sur la meme instance
+  ferait un update au lieu d'une creation.
+}

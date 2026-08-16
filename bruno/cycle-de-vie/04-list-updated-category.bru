@@ -1,0 +1,33 @@
+meta {
+  name: GET articles?category — la mise a jour est visible
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/store/articles?category=Hydration
+  body: none
+  auth: inherit
+}
+
+params:query {
+  category: Hydration
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("la nouvelle categorie ne contient que l'article mis a jour", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.have.lengthOf(1);
+    expect(res.getBody()[0].id).to.equal(bru.getVar("createdArticleId"));
+    expect(res.getBody()[0].name).to.equal(bru.getEnvVar("testArticleName"));
+  });
+}
+
+docs {
+  Verifie que le changement de categorie est bien pris en compte par le filtre,
+  et donc que l'ancienne ligne n'a pas ete dupliquee.
+}

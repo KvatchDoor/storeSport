@@ -2,9 +2,6 @@ package com.sportstore.domain.model;
 
 import com.sportstore.domain.exception.InvalidArticleException;
 
-/**
- * Nom d'un article : identifiant naturel et unique du catalogue.
- */
 public record ArticleName(String value) {
 
     private static final int MAX_LENGTH = 120;

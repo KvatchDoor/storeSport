@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "sportStore",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

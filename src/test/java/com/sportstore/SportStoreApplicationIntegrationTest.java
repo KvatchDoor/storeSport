@@ -9,9 +9,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -29,7 +31,7 @@ class SportStoreApplicationIntegrationTest {
     @Test
     @DisplayName("le jeu de donnees initial est charge au demarrage")
     void initialDataIsLoaded() throws Exception {
-        mockMvc.perform(get("/store/articles/names"))
+        mockMvc.perform(get("/store/article-names"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(5))
                 .andExpect(jsonPath("$[0]").value("Mountain Bike Helmet"))
@@ -90,6 +92,8 @@ class SportStoreApplicationIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(6));
     }
 
+    
+
     @Test
     @DisplayName("DELETE supprime l'article puis retourne 404")
     void deleteRemovesArticle() throws Exception {
@@ -104,3 +108,4 @@ class SportStoreApplicationIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 }
+

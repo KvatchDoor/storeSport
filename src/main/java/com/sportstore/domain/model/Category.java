@@ -2,9 +2,6 @@ package com.sportstore.domain.model;
 
 import com.sportstore.domain.exception.InvalidArticleException;
 
-/**
- * Categorie de rayon a laquelle appartient un article.
- */
 public record Category(String value) {
 
     private static final int MAX_LENGTH = 80;

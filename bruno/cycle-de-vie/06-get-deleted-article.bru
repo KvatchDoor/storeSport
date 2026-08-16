@@ -1,0 +1,28 @@
+meta {
+  name: GET article — 404 apres suppression
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/store/articles/{{testArticleNameEncoded}}
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 404
+}
+
+tests {
+  test("l'article supprime n'est plus accessible", function () {
+    expect(res.getStatus()).to.equal(404);
+    expect(res.getBody().error).to.equal(
+      `Article not found: ${bru.getEnvVar("testArticleName")}`
+    );
+  });
+}
+
+docs {
+  Confirme que la suppression est bien effective en base et pas seulement en reponse HTTP.
+}

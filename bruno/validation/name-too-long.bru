@@ -1,0 +1,50 @@
+meta {
+  name: PUT article — 400 nom trop long
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+script:pre-request {
+  bru.setVar("tooLongName", "A".repeat(121));
+}
+
+body:json {
+  {
+    "name": "{{tooLongName}}",
+    "category": "Accessories",
+    "price": 19.90
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("un nom de plus de 120 caracteres est rejete en 400", function () {
+    expect(res.getStatus()).to.equal(400);
+    expect(res.getBody().error).to.match(/^name : /);
+    expect(res.getBody().error).to.contain("120");
+  });
+
+  test("l'article n'a pas ete cree", function () {
+    expect(res.getBody()).to.not.have.property("id");
+  });
+}
+
+docs {
+  La borne des 120 caracteres est declaree une seule fois, dans le contrat
+  (`maxLength: 120`), et se retrouve a trois endroits sans duplication de code :
+  la documentation publiee, le `@Size` du DTO genere, et l'invariant du Value Object
+  `ArticleName` qui la porte cote domaine.
+}

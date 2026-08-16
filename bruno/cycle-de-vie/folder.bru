@@ -1,0 +1,12 @@
+meta {
+  name: cycle-de-vie
+  seq: 3
+}
+
+docs {
+  Scenario ordonne (creation -> relecture -> mise a jour -> suppression -> 404).
+
+  A executer en sequence : chaque requete depend de la precedente via la variable
+  d'execution `createdArticleId`. Le scenario est idempotent, il nettoie l'article
+  qu'il a cree.
+}

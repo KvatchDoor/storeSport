@@ -1,0 +1,38 @@
+meta {
+  name: PUT article — 400 categorie vide
+  type: http
+  seq: 3
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "Bruno Invalid Category",
+    "category": "",
+    "price": 19.90
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("une categorie vide est rejetee en 400", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("l'erreur designe le champ fautif", function () {
+    expect(res.getBody().error).to.match(/^category : /);
+    expect(res.getBody().error).to.contain("size must be between 1 and 80");
+  });
+}

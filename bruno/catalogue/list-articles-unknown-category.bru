@@ -1,0 +1,31 @@
+meta {
+  name: GET articles?category — categorie inconnue
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/store/articles?category=Curling
+  body: none
+  auth: inherit
+}
+
+params:query {
+  category: Curling
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  test("une categorie inconnue est un cas nominal : 200 et liste vide", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getBody()).to.be.an("array").that.is.empty;
+  });
+}
+
+docs {
+  Une categorie sans article n'est pas une erreur : l'API repond 200 avec `[]`,
+  jamais 404.
+}

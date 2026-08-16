@@ -2,41 +2,54 @@ package com.sportstore.infrastructure.adapter.in.rest;
 
 import com.sportstore.application.port.in.UpsertArticleCommand;
 import com.sportstore.domain.model.Article;
+import com.sportstore.domain.model.ArticleId;
 import com.sportstore.domain.model.ArticleName;
 import com.sportstore.domain.model.Category;
 import com.sportstore.domain.model.Price;
 import com.sportstore.infrastructure.adapter.in.rest.dto.ArticleResponse;
 import com.sportstore.infrastructure.adapter.in.rest.dto.UpsertArticleRequest;
-import org.springframework.stereotype.Component;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.ReportingPolicy;
 
-/**
- * Traduction entre les DTO de l'API HTTP et les objets du domaine.
- */
-@Component
-public class ArticleWebMapper {
+import java.math.BigDecimal;
+import java.util.UUID;
 
-    ArticleResponse toResponse(Article article) {
-        return new ArticleResponse(
-                article.id().value(),
-                article.name().value(),
-                article.category().value(),
-                article.price().amount()
-        );
-    }
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING,
+        unmappedTargetPolicy = ReportingPolicy.ERROR)
+public interface ArticleWebMapper {
 
-    UpsertArticleCommand toCommand(UpsertArticleRequest request) {
-        return new UpsertArticleCommand(
-                new ArticleName(request.name()),
-                new Category(request.category()),
-                new Price(request.price())
-        );
-    }
+    ArticleResponse toResponse(Article article);
 
-    ArticleName toArticleName(String name) {
+    @BeanMapping(unmappedSourcePolicy = ReportingPolicy.ERROR)
+    UpsertArticleCommand toCommand(UpsertArticleRequest request);
+
+    default ArticleName toArticleName(String name) {
         return new ArticleName(name);
     }
 
-    Category toCategory(String category) {
+    default Category toCategory(String category) {
         return new Category(category);
+    }
+
+    default Price toPrice(BigDecimal price) {
+        return new Price(price);
+    }
+
+    default UUID fromArticleId(ArticleId id) {
+        return id.value();
+    }
+
+    default String fromArticleName(ArticleName name) {
+        return name.value();
+    }
+
+    default String fromCategory(Category category) {
+        return category.value();
+    }
+
+    default BigDecimal fromPrice(Price price) {
+        return price.amount();
     }
 }

@@ -1,0 +1,18 @@
+meta {
+  name: validation
+  seq: 4
+}
+
+docs {
+  Corps de requete invalides et normalisation des valeurs.
+
+  Deux niveaux de defense se traduisent tous les deux en 400 :
+  - le **contrat**, dont les contraintes (`required`, `minLength`, `maxLength`, `minimum`)
+    sont generees en annotations Bean Validation sur les DTO ;
+  - le **domaine**, dont les Value Objects (`ArticleName`, `Category`, `Price`) portent des
+    invariants que le contrat ne sait pas exprimer, via `InvalidArticleException`.
+
+  Les messages de Bean Validation sont figes par `src/main/resources/ValidationMessages.properties` :
+  sans cela, ils suivraient la locale du serveur et le corps des reponses 400 changerait
+  d'une machine a l'autre.
+}

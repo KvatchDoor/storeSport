@@ -6,10 +6,6 @@ import com.sportstore.domain.model.Price;
 
 import java.util.Objects;
 
-/**
- * Intention metier de creation ou de remplacement complet d'un article.
- * Ne transporte que des objets du domaine : aucun DTO d'API ne traverse le port.
- */
 public record UpsertArticleCommand(ArticleName name, Category category, Price price) {
 
     public UpsertArticleCommand {

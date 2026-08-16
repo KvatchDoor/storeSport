@@ -8,28 +8,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
-/**
- * Traduction des exceptions metier en reponses HTTP. Concerne uniquement l'adaptateur primaire.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final String INVALID_PAYLOAD_MESSAGE = "Invalid request payload";
 
     @ExceptionHandler(ArticleNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleArticleNotFound(ArticleNotFoundException exception) {
+        log.debug("404 - article inconnu : {}", exception.articleName());
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(new ErrorResponse(exception.getMessage()));
     }
 
     @ExceptionHandler(InvalidArticleException.class)
     public ResponseEntity<ErrorResponse> handleInvalidArticle(InvalidArticleException exception) {
+        log.debug("400 - invariant du domaine viole : {}", exception.getMessage());
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(exception.getMessage()));
     }
@@ -40,8 +43,18 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getField() + " : " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
 
+        log.debug("400 - corps non conforme au contrat : {}", message);
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(message.isBlank() ? "Invalid request payload" : message));
+                .body(new ErrorResponse(message.isBlank() ? INVALID_PAYLOAD_MESSAGE : message));
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException exception) {
+        log.debug("400 - corps de requete illisible : {}", exception.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(INVALID_PAYLOAD_MESSAGE));
     }
 
     @ExceptionHandler(ArticleStorageException.class)

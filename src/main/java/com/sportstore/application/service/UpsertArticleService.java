@@ -4,12 +4,18 @@ import com.sportstore.application.port.in.UpsertArticleCommand;
 import com.sportstore.application.port.in.UpsertArticleUseCase;
 import com.sportstore.application.port.out.ArticleRepository;
 import com.sportstore.domain.model.Article;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @Transactional
 public class UpsertArticleService implements UpsertArticleUseCase {
+
+    private static final Logger log = LoggerFactory.getLogger(UpsertArticleService.class);
 
     private final ArticleRepository articleRepository;
 
@@ -17,16 +23,22 @@ public class UpsertArticleService implements UpsertArticleUseCase {
         this.articleRepository = articleRepository;
     }
 
-    /**
-     * Le nom est l'identifiant naturel de l'article : s'il existe deja, ses caracteristiques sont
-     * integralement remplacees et son identite est conservee ; sinon un nouvel article est cree.
-     */
     @Override
     public Article upsert(UpsertArticleCommand command) {
-        Article article = articleRepository.findByName(command.name())
-                .map(existing -> existing.replaceWith(command.category(), command.price()))
+        Optional<Article> existing = articleRepository.findByName(command.name());
+
+        Article article = existing
+                .map(found -> found.replaceWith(command.category(), command.price()))
                 .orElseGet(() -> Article.create(command.name(), command.category(), command.price()));
 
-        return articleRepository.save(article);
+        Article saved = articleRepository.save(article);
+
+        existing.ifPresentOrElse(
+                previous -> log.info("Article remplace : {} (id={}, categorie {} -> {}, prix {} -> {})",
+                        saved.name(), saved.id(), previous.category(), saved.category(), previous.price(), saved.price()),
+                () -> log.info("Article cree : {} (id={}, categorie={}, prix={})",
+                        saved.name(), saved.id(), saved.category(), saved.price()));
+
+        return saved;
     }
 }

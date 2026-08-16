@@ -1,0 +1,49 @@
+meta {
+  name: GET names — liste des noms
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/store/article-names
+  body: none
+  auth: inherit
+}
+
+assert {
+  res.status: eq 200
+}
+
+tests {
+  const SEEDED = [
+    "Mountain Bike Helmet",
+    "Running Shoes",
+    "Soccer Ball",
+    "Tennis Racket",
+    "Yoga Mat"
+  ];
+
+  test("repond 200 avec un tableau de chaines", function () {
+    expect(res.getStatus()).to.equal(200);
+    expect(res.getHeader("content-type")).to.contain("application/json");
+    expect(res.getBody()).to.be.an("array");
+    res.getBody().forEach((name) => expect(name).to.be.a("string"));
+  });
+
+  test("contient les 5 articles du jeu de donnees initial", function () {
+    expect(res.getBody()).to.include.members(SEEDED);
+  });
+
+  test("les noms sont tries par ordre alphabetique croissant", function () {
+    const names = res.getBody();
+    const sorted = [...names].sort();
+    expect(names).to.eql(sorted);
+  });
+}
+
+docs {
+  `GET /store/article-names` — 200, tableau de noms tries (`findAllNamesOrderByNameAsc`).
+
+  Ressource distincte du catalogue : sous `/store/articles/{name}`, `{name}` designe
+  toujours un article, sans nom reserve.
+}

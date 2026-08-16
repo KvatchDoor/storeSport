@@ -1,0 +1,44 @@
+meta {
+  name: PUT article — 400 nom vide (contrat)
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/store/articles
+  body: json
+  auth: inherit
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "name": "",
+    "category": "Accessories",
+    "price": 19.90
+  }
+}
+
+assert {
+  res.status: eq 400
+}
+
+tests {
+  test("un nom vide est rejete en 400", function () {
+    expect(res.getStatus()).to.equal(400);
+  });
+
+  test("l'erreur designe le champ fautif", function () {
+    expect(res.getBody().error).to.match(/^name : /);
+    expect(res.getBody().error).to.contain("size must be between 1 and 120");
+  });
+}
+
+docs {
+  `minLength: 1` / `maxLength: 120` du contrat sont generes en `@Size(min = 1, max = 120)`
+  sur le DTO. Le message est fige par `src/main/resources/ValidationMessages.properties`
+  pour ne pas dependre de la locale du serveur.
+}
